@@ -31,8 +31,15 @@ module Mongoid #:nodoc:
       #
       # @since 2.0.0
       def []=(key, value)
-        key = "#{key}.#{::I18n.locale}" if klass.fields[key.to_s].try(:localized?)
+        key = prepare_key(key)
         super(key, try_to_typecast(key, value))
+      end
+
+      def prepare_key(key)
+        access = key.to_s
+        key = fields[aliased_fields[access]].name if aliased_fields[access]
+        key = "#{key}.#{::I18n.locale}"           if klass.fields[access].try(:localized?)
+        key
       end
 
       # Merge the selector with another hash.
@@ -84,8 +91,7 @@ module Mongoid #:nodoc:
       #
       # @since 1.0.0
       def try_to_typecast(key, value)
-        access = key.to_s
-        if field = fields[key.to_s] || fields[aliased_fields[key.to_s]]
+        if field = fields[key.to_s]
           typecast_value_for(field, value)
         elsif proper_and_or_value?(key, value)
           handle_and_or_value(value)
@@ -104,9 +110,7 @@ module Mongoid #:nodoc:
         [].tap do |result|
            result.push(*values.map do |value|
             Hash[value.map do |_key, _value|
-              if klass.fields[_key.to_s].try(:localized?)
-                _key = "#{_key}.#{::I18n.locale}"
-              end
+              _key = prepare_key(_key)
               [_key, try_to_typecast(_key, _value)]
             end]
           end)
