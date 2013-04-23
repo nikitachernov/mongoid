@@ -317,12 +317,25 @@ describe Mongoid::Fields do
 
       context "when defining a criteria" do
 
-        let(:criteria) do
-          Person.where(:alias => "true")
+        context 'through alias' do
+
+          let(:criteria) do
+            Person.where(:alias => "true")
+          end
+
+          it "properly serializes the aliased field" do
+            criteria.selector.should eq({ 'aliased' => true })
+          end
         end
 
-        it "properly serializes the aliased field" do
-          criteria.selector.should eq({ :alias => true })
+        context 'directly' do
+          let(:criteria) do
+            Person.where(:aliased => "true")
+          end
+
+          it "properly serializes the aliased field" do
+            criteria.selector.should eq({ :aliased => true })
+          end
         end
       end
     end
